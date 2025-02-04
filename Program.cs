@@ -18,7 +18,13 @@ namespace Blog
                 options.UseSqlServer(connectionString);
             });
 
-            builder.Services.AddControllers();
+            builder.Services
+                .AddControllers()
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    // Desativa a validação automática do ModelState para utilizar o ResultViewModel para padronização dos retornos
+                    options.SuppressModelStateInvalidFilter = true;
+                });
 
             var app = builder.Build();
             app.MapControllers();
