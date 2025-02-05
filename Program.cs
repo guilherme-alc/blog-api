@@ -1,4 +1,5 @@
 using Blog.Data;
+using Blog.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Blog
@@ -25,6 +26,8 @@ namespace Blog
                     // Desativa a validação automática do ModelState para utilizar o ResultViewModel para padronização dos retornos
                     options.SuppressModelStateInvalidFilter = true;
                 });
+
+            builder.Services.AddTransient<TokenService>();
 
             var app = builder.Build();
             app.MapControllers();
