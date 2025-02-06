@@ -33,11 +33,11 @@ namespace Blog.Data.Mappings
                 .HasMaxLength(255);
 
             builder.Property(u => u.Bio)
-                .IsRequired()
+                .IsRequired(false)
                 .HasColumnType("TEXT");
 
             builder.Property(u => u.Image)
-              .IsRequired()
+              .IsRequired(false)
               .HasColumnType("VARCHAR")
               .HasMaxLength(2000);
 
