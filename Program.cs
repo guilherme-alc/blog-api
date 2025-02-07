@@ -46,7 +46,7 @@ namespace Blog
                     // Desativa a validação automática do ModelState para utilizar o ResultViewModel para padronização dos retornos
                     options.SuppressModelStateInvalidFilter = true;
                 });
-
+            //Lifetime
             builder.Services.AddTransient<TokenService>();
 
             var app = builder.Build();

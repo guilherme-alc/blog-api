@@ -20,6 +20,7 @@ namespace Blog.Controllers
             {
                 var categories = await context.Categories
                     .AsNoTracking()
+                    .OrderBy(c => c.Id)
                     .Skip(skip)
                     .Take(take)
                     .ToListAsync();
