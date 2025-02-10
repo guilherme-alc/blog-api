@@ -5,6 +5,7 @@ using Blog.ViewModels;
 using Blog.ViewModels.Categories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Blog.Controllers
 {
@@ -12,26 +13,34 @@ namespace Blog.Controllers
     public class CategoryController : ControllerBase
     {
         [HttpGet("v1/categories")]
-        [Route("v1/categories/{skip:int}/{take:int}")]
+        //[Route("v1/categories/{skip:int}/{take:int}")]
         public async Task<IActionResult> GetAsync (
-            [FromServices] BlogDataContext context, 
-            [FromRoute] int skip = 0, [FromRoute] int take = 25)
+            [FromServices] BlogDataContext context,
+            [FromServices] IMemoryCache cache)
         {
             try
             {
-                var categories = await context.Categories
-                    .AsNoTracking()
-                    .OrderBy(c => c.Id)
-                    .Skip(skip)
-                    .Take(take)
-                    .ToListAsync();
-
+                var categories = await cache.GetOrCreateAsync("CategoriesCache", entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+                    return GetCategories(context);
+                });
                 return Ok(new ResultViewModel<List<Category>>(categories));
             }
             catch
             {
                 return StatusCode(500, new ResultViewModel<List<Category>>("05XE5 Falha interna no servidor"));
             }
+        }
+
+        private async Task<List<Category>> GetCategories(BlogDataContext context)
+        {
+            var categories = await context.Categories
+                .AsNoTracking()
+                .OrderBy(c => c.Id)
+                .ToListAsync();
+
+            return categories;
         }
 
         [HttpGet("v1/categories/{id:int}")]
