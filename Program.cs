@@ -20,16 +20,25 @@ namespace Blog
             ConfigureMvc(builder);
             ConfigureServices(builder);
 
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
             var app = builder.Build();
 
             LoadConfiguration(app);
-
+            app.UseHttpsRedirection();
             app.UseResponseCompression();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
             app.Run();
         }
