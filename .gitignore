@@ -1,4 +1,5 @@
 appsettings.Development
+.idea/
 
 # User-specific files
 *.rsuser
