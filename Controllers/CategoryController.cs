@@ -3,6 +3,7 @@ using Blog.Extensions;
 using Blog.Models;
 using Blog.ViewModels;
 using Blog.ViewModels.Categories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -12,6 +13,7 @@ namespace Blog.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
+        [Authorize]
         [HttpGet("v1/categories")]
         //[Route("v1/categories/{skip:int}/{take:int}")]
         public async Task<IActionResult> GetAsync (
@@ -43,6 +45,7 @@ namespace Blog.Controllers
             return categories;
         }
 
+        [Authorize]
         [HttpGet("v1/categories/{id:int}")]
         public async Task<IActionResult> GetByIdAsync ([FromServices] BlogDataContext context, [FromRoute] int id)
         {
@@ -61,6 +64,7 @@ namespace Blog.Controllers
 
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPost("v1/categories")]
         public async Task<IActionResult> PostAsync ([FromServices] BlogDataContext context, [FromBody] EditorCategoryViewModel model)
         {
@@ -90,6 +94,7 @@ namespace Blog.Controllers
             }
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPut("v1/categories/{id:int}")]
         public async Task<IActionResult> PutAsync ([FromServices] BlogDataContext context, [FromRoute] int id, [FromBody] EditorCategoryViewModel model)
         {
@@ -120,6 +125,7 @@ namespace Blog.Controllers
 
         }
 
+        [Authorize(Roles = "admin")]
         [HttpDelete("v1/categories/{id:int}")]
         public async Task<IActionResult> DeleteAsync ([FromServices] BlogDataContext context, [FromRoute] int id)
         {

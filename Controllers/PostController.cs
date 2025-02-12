@@ -1,7 +1,9 @@
 ﻿using Blog.Data;
+using Blog.Extensions;
 using Blog.Models;
 using Blog.ViewModels;
 using Blog.ViewModels.Posts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +12,7 @@ namespace Blog.Controllers
     [ApiController]
     public class PostController : ControllerBase
     {
+        [Authorize]
         [HttpGet("v1/posts")]
         public async Task<IActionResult> GetAsync(
             [FromServices] BlogDataContext context,
@@ -51,6 +54,7 @@ namespace Blog.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("v1/posts/{id:int}")]
         public async Task<IActionResult> GetDetailsAsync(
             [FromServices] BlogDataContext context,
@@ -78,6 +82,7 @@ namespace Blog.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("v1/posts/category/{category}")]
         public async Task<IActionResult> GetByGategoryAsync(
             [FromServices] BlogDataContext context,
@@ -118,6 +123,107 @@ namespace Blog.Controllers
             catch
             {
                 return StatusCode(500, new ResultViewModel<List<Post>>("05XE21 Falha interna no servidor"));
+            }
+        }
+        
+        [Authorize(Roles = "admin,author")]
+        [HttpPost("v1/posts")]
+        public async Task<IActionResult> PostAsync(
+            [FromServices] BlogDataContext context,
+            [FromBody] CreatePostViewModel model)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(new ResultViewModel<Post>(ModelState.GetErros()));
+            try
+            {
+                Post post = new Post()
+                {
+                    Id = 0,
+                    Title = model.Title,
+                    Summary = model.Summary,
+                    Body = model.Body,
+                    Slug = model.Slug,
+                    AuthorId = model.AuthorId,
+                    CategoryId = model.CategoryId,
+                    CreateDate = DateTime.Now,
+                    LastUpdateDate = DateTime.Now,
+                };
+
+                await context.Posts.AddAsync(post);
+                await context.SaveChangesAsync();
+
+                return Created($"v1/posts/{post.Id}", new ResultViewModel<Post>(post));
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new ResultViewModel<Category>("05XE - Não foi possível incluir o post"));
+            }
+            catch
+            {
+                return StatusCode(500, new ResultViewModel<Category>("05XE Falha interna no servidor"));
+            }
+        }
+
+        [Authorize(Roles = "admin,author")]
+        [HttpPut("v1/posts/{id:int}")]
+        public async Task<IActionResult> PutAsync([FromServices] BlogDataContext context,
+            [FromBody] EditPostViewModel model,
+            [FromRoute] int id)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new ResultViewModel<Post>(ModelState.GetErros()));
+            try
+            {
+                var post = await context.Posts.FindAsync(id);
+                if (post == null)
+                    return NotFound(new ResultViewModel<Post>("Postagem não encontrada."));
+
+                post.Title = model.Title;
+                post.Summary = model.Summary;
+                post.Body = model.Body;
+                post.Slug = model.Slug.ToLower();
+                post.CategoryId = model.CategoryId;
+                post.LastUpdateDate = DateTime.Now;
+
+                context.Posts.Update(post);
+                await context.SaveChangesAsync();
+
+                return Ok(new ResultViewModel<Post>(post));
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new ResultViewModel<Post>("05XE - Não foi possível alterar a postagem"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<Post>("05XE Falha interna no servidor"));
+            }
+
+        }
+
+        [Authorize(Roles = "admin,author")]
+        [HttpDelete("v1/posts/{id:int}")]
+        public async Task<IActionResult> DeleteAsync(
+            [FromServices] BlogDataContext context, 
+            [FromRoute] int id)
+        {
+            try
+            {
+                var post = context.Posts.Find(id);
+                if (post == null)
+                    return NotFound(new ResultViewModel<Post>("Postagem não encontrada."));
+                context.Posts.Remove(post);
+                await context.SaveChangesAsync();
+
+                return Ok(new ResultViewModel<Post>(post));
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new ResultViewModel<Post>("05XE - Não foi possível deletar a postagem."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<Post>("05XE Falha interna no servidor"));
             }
         }
     }
