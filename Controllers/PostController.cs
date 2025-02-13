@@ -178,12 +178,17 @@ namespace Blog.Controllers
                 if (post == null)
                     return NotFound(new ResultViewModel<Post>("Postagem não encontrada."));
 
-                post.Title = model.Title;
-                post.Summary = model.Summary;
-                post.Body = model.Body;
-                post.Slug = model.Slug.ToLower();
-                post.CategoryId = model.CategoryId;
+                post.Title = string.IsNullOrWhiteSpace(model.Title) ? post.Title : model.Title;
+                post.Summary = string.IsNullOrWhiteSpace(model.Summary) ? post.Summary : model.Summary;
+                post.Body = string.IsNullOrWhiteSpace(model.Body) ? post.Body : model.Body;
+                post.Slug = string.IsNullOrWhiteSpace(model.Slug) ? post.Slug : model.Slug.ToLower();
                 post.LastUpdateDate = DateTime.Now;
+
+                var categoryExists = await context.Categories.AnyAsync(c => c.Id == model.CategoryId);
+                if (!categoryExists)
+                    return BadRequest(new ResultViewModel<Post>("Categoria inválida ou inexistente."));
+                post.CategoryId = model.CategoryId;
+
 
                 context.Posts.Update(post);
                 await context.SaveChangesAsync();
