@@ -2,7 +2,6 @@
 using Blog.Extensions;
 using Blog.Models;
 using Blog.ViewModels;
-using Blog.ViewModels.Categories;
 using Blog.ViewModels.Roles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +30,7 @@ namespace Blog.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<List<Category>>("05XE5 Falha interna no servidor."));
+                return StatusCode(500, new ResultViewModel<List<Role>>("05XE5 Falha interna no servidor."));
             }
         }
 
@@ -60,7 +59,7 @@ namespace Blog.Controllers
             }
             catch
             {
-                return StatusCode(500, new ResultViewModel<Category>("05X Falha interna no servidor."));
+                return StatusCode(500, new ResultViewModel<Role>("05X Falha interna no servidor."));
             }
         }
 
@@ -86,11 +85,11 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Category>("05XE - Não foi possível incluir o perfil."));
+                return StatusCode(500, new ResultViewModel<Role>("05XE - Não foi possível incluir o perfil."));
             }
             catch
             {
-                return StatusCode(500, new ResultViewModel<Category>("05XE Falha interna no servidor."));
+                return StatusCode(500, new ResultViewModel<Role>("05XE Falha interna no servidor."));
             }
         }
 
@@ -116,11 +115,11 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Category>("05XE - Não foi possível alterar o perfil."));
+                return StatusCode(500, new ResultViewModel<Role>("05XE - Não foi possível alterar o perfil."));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Category>("05XE Falha interna no servidor."));
+                return StatusCode(500, new ResultViewModel<Role>("05XE Falha interna no servidor."));
             }
         }
 
@@ -149,6 +148,5 @@ namespace Blog.Controllers
                 return StatusCode(500, new ResultViewModel<Role>("05XE Falha interna no servidor"));
             }
         }
-
     }
 }
