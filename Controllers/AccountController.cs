@@ -4,9 +4,12 @@ using Blog.Models;
 using Blog.Services;
 using Blog.ViewModels;
 using Blog.ViewModels.Accounts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureIdentity.Password;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Blog.Controllers
 {
@@ -78,6 +81,42 @@ namespace Blog.Controllers
             {
                 return StatusCode(500, new ResultViewModel<string>("05X18 - Falha interna no servidor."));
             }
+        }
+
+        [Authorize]
+        [HttpPatch("v1/accounts")]
+        public async Task<IActionResult> Edit (
+            [FromServices] BlogDataContext context,
+            [FromBody] EditUserViewModel model)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(new ResultViewModel<User>(ModelState.GetErros()));
+
+            var userId = GetUserIdFromToken();
+            var user = await context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound("Usuário não encontrado.");
+
+            user.Name = string.IsNullOrEmpty(model.Name) ? user.Name : model.Name;
+            user.Email = string.IsNullOrEmpty(model.Email) ? user.Email : model.Email;
+            user.Bio = string.IsNullOrEmpty(model.Bio) ? user.Bio : model.Bio;
+            user.PasswordHash = string.IsNullOrEmpty(model.Password) ? user.PasswordHash : PasswordHasher.Hash(model.Password);
+
+            context.Update(user);
+            await context.SaveChangesAsync();
+
+            return Ok(new ResultViewModel<EditUserViewModel>(model));
+        }
+
+        private int GetUserIdFromToken()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "nameid");
+
+            return userIdClaim != null ? int.Parse(userIdClaim.Value) : -1;
         }
     }
 }

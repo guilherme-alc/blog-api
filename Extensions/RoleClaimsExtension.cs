@@ -7,8 +7,9 @@ namespace Blog.Extensions
     {
         public static IEnumerable<Claim> GetClaims (this User user)
         {
-            var result = new List<Claim> ()
+            var result = new List<Claim>()
             {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Email)
             };
             result.AddRange(
