@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -19,9 +20,6 @@ namespace Blog
             ConfigureAuthentication(builder);
             ConfigureMvc(builder);
             ConfigureServices(builder);
-
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
@@ -82,6 +80,7 @@ namespace Blog
             {
                 options.Level = CompressionLevel.Optimal;
             });
+
             builder.Services
                 .AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
@@ -94,6 +93,34 @@ namespace Blog
                     opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                     opts.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
                 });
+
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Insira o token JWT no campo abaixo. Exemplo: Bearer {seu token}"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme()
+                        {
+                            Reference = new OpenApiReference()
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new List<string> ()
+                    }
+                });
+            });
         }
 
         static void ConfigureServices(WebApplicationBuilder builder)
