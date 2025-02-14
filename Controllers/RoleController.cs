@@ -81,7 +81,7 @@ namespace Blog.Controllers
                 await context.Roles.AddAsync(role);
                 await context.SaveChangesAsync();
 
-                return Created($"v1/categories/{role.Id}", new ResultViewModel<Role>(role));
+                return Created($"v1/roles/{role.Id}", new ResultViewModel<Role>(role));
             }
             catch (DbUpdateException ex)
             {
