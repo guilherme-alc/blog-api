@@ -27,7 +27,8 @@ namespace Blog.Controllers
             {
                 Name = model.Name,
                 Email = model.Email,
-                Slug = model.Email.Replace("@", "-").Replace(".", "-")
+                Slug = model.Email.Replace("@", "-").Replace(".", "-"),
+                CreateDate = DateTime.Now,
             };
 
             // Gera senha forte e codifica

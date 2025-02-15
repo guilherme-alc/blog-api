@@ -47,6 +47,11 @@ namespace Blog.Data.Mappings
                 .HasColumnType("VARCHAR")
                 .HasMaxLength(80);
 
+            builder.Property(u => u.CreateDate)
+                .IsRequired()
+                .HasColumnType("SMALLDATETIME")
+                .HasDefaultValueSql("GETDATE()");
+
             builder.HasMany(u => u.Roles)
                 .WithMany(r => r.Users)
                 .UsingEntity<Dictionary<string, object>>(
