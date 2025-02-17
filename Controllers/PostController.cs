@@ -27,6 +27,9 @@ namespace Blog.Controllers
                     .AsNoTracking()
                     .Include(p => p.Author)
                     .Include(p => p.Category)
+                    .OrderBy(p => p.Id)
+                    .Skip(page * pageSize)
+                    .Take(pageSize)
                     .Select(p => new ListPostsViewModel()
                     {
                         Id = p.Id,
@@ -36,10 +39,8 @@ namespace Blog.Controllers
                         Category = p.Category.Name,
                         Author = $"{p.Author.Name} - ({p.Author.Email})"
                     })
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
-                    .OrderBy(p => p.Id)
                     .ToListAsync();
+
                 return StatusCode(200, new ResultViewModel<dynamic>(new
                 {
                     total = count,
@@ -50,7 +51,7 @@ namespace Blog.Controllers
             }
             catch
             {
-                return StatusCode(500, new ResultViewModel<List<Post>>("05XE21 Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<List<string>>("05XE21 Falha interna no servidor"));
             }
         }
 
@@ -83,10 +84,10 @@ namespace Blog.Controllers
         }
 
         [Authorize]
-        [HttpGet("v1/posts/category/{category}")]
+        [HttpGet("v1/posts/category/{categoryName}")]
         public async Task<IActionResult> GetByGategoryAsync(
             [FromServices] BlogDataContext context,
-            [FromRoute] string category,
+            [FromRoute] string categoryName,
             [FromQuery] int page = 0,
             [FromQuery] int pageSize = 25)
         {
@@ -97,7 +98,7 @@ namespace Blog.Controllers
                     .AsNoTracking()
                     .Include(p => p.Category)
                     .Include(p => p.Author)
-                    .Where(p => p.Category.Slug == category)
+                    .Where(p => p.Category.Slug == categoryName)
                     .Select(p => new ListPostsViewModel()
                     {
                         Id = p.Id,
@@ -122,7 +123,7 @@ namespace Blog.Controllers
             }
             catch
             {
-                return StatusCode(500, new ResultViewModel<List<Post>>("05XE21 Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<List<string>>("05XE21 Falha interna no servidor"));
             }
         }
         
@@ -156,11 +157,11 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Category>("05XE - Não foi possível incluir o post"));
+                return StatusCode(500, new ResultViewModel<string>("05XE - Não foi possível incluir o post"));
             }
             catch
             {
-                return StatusCode(500, new ResultViewModel<Category>("05XE Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor"));
             }
         }
 
@@ -186,7 +187,7 @@ namespace Blog.Controllers
 
                 var categoryExists = await context.Categories.AnyAsync(c => c.Id == model.CategoryId);
                 if (!categoryExists)
-                    return BadRequest(new ResultViewModel<Post>("Categoria inválida ou inexistente."));
+                    return BadRequest(new ResultViewModel<string>("Categoria inválida ou inexistente."));
                 post.CategoryId = model.CategoryId;
 
 
@@ -197,11 +198,11 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("05XE - Não foi possível alterar a postagem"));
+                return StatusCode(500, new ResultViewModel<string>("05XE - Não foi possível alterar a postagem"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("05XE Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor"));
             }
 
         }
@@ -224,11 +225,11 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("05XE - Não foi possível deletar a postagem."));
+                return StatusCode(500, new ResultViewModel<string>("05XE - Não foi possível deletar a postagem."));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("05XE Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor"));
             }
         }
     }
