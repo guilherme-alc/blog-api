@@ -138,6 +138,7 @@ namespace Blog
             //Lifetime
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<CategoryService>();
+            builder.Services.AddScoped<TagService>();
             builder.Services.AddTransient<TokenService>();
         }
     }
