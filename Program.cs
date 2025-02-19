@@ -1,4 +1,5 @@
 using Blog.Data;
+using Blog.Repositories;
 using Blog.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -44,8 +45,8 @@ namespace Blog
         static void LoadConfiguration(WebApplication app)
         {
             Configuration.JwtKey = app.Configuration.GetValue<string>("JwtKey");
-            Configuration.ApiKeyName = app.Configuration.GetValue<string>("ApiKeyName");
-            Configuration.ApiKey = app.Configuration.GetValue<string>("ApiKey");
+            //Configuration.ApiKeyName = app.Configuration.GetValue<string>("ApiKeyName");
+            //Configuration.ApiKey = app.Configuration.GetValue<string>("ApiKey");
         }
 
         static void ConfigureAuthentication (WebApplicationBuilder builder)
@@ -135,6 +136,8 @@ namespace Blog
             });
 
             //Lifetime
+            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            builder.Services.AddScoped<CategoryService>();
             builder.Services.AddTransient<TokenService>();
         }
     }
