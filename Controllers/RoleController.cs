@@ -117,7 +117,7 @@ namespace Blog.Controllers
         {
             try
             {
-                var role = await _service.ReadRoleById(id);
+                var role = await _service.DeleteRoleAsync(id);
 
                 return StatusCode(200, new ResultViewModel<Role>(role));
             }
