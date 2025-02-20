@@ -74,7 +74,7 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("Erro ao salvar a categoria"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao salvar a tag"));
             }
             catch (Exception ex)
             {
@@ -107,7 +107,7 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("Erro ao atualizar a categoria"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao atualizar a tag"));
             }
             catch (Exception ex)
             {
@@ -137,7 +137,7 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("Erro ao deletar a categoria"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao deletar a tag"));
             }
             catch (Exception ex)
             {
