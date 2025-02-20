@@ -1,6 +1,8 @@
-﻿using Blog.Data;
+﻿using Azure;
+using Blog.Data;
 using Blog.Extensions;
 using Blog.Models;
+using Blog.Services;
 using Blog.ViewModels;
 using Blog.ViewModels.Posts;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +14,11 @@ namespace Blog.Controllers
     [ApiController]
     public class PostController : ControllerBase
     {
+        private readonly PostService _service;
+        public PostController(PostService service)
+        {
+            _service = service;
+        }
         [Authorize]
         [HttpGet("v1/posts")]
         public async Task<IActionResult> GetAsync(
@@ -21,25 +28,8 @@ namespace Blog.Controllers
         {
             try
             {
-                var count = await context.Posts.AsNoTracking().CountAsync();
-                var posts = await context
-                    .Posts
-                    .AsNoTracking()
-                    .Include(p => p.Author)
-                    .Include(p => p.Category)
-                    .OrderBy(p => p.Id)
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
-                    .Select(p => new ListPostsViewModel()
-                    {
-                        Id = p.Id,
-                        Title = p.Title,
-                        Slug = p.Slug,
-                        LastUpdateDate = p.LastUpdateDate,
-                        Category = p.Category.Name,
-                        Author = $"{p.Author.Name} - ({p.Author.Email})"
-                    })
-                    .ToListAsync();
+                var posts = await _service.ReadAllPostsAsync(page, pageSize);
+                var count = posts.ToList().Count();
 
                 return StatusCode(200, new ResultViewModel<dynamic>(new
                 {
@@ -49,9 +39,9 @@ namespace Blog.Controllers
                     posts
                 }));
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<List<string>>("05XE21 Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
@@ -63,23 +53,22 @@ namespace Blog.Controllers
         {
             try
             {
-                var post = await context.Posts
-                    .AsNoTracking()
-                    .Include(p => p.Category)
-                    .Include(p => p.Author)
-                    .ThenInclude(a => a.Roles)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                var post = await _service.ReadPostByIdAsync(id);
 
-                if(post == null)
-                {
-                    return NotFound(new ResultViewModel<string>("05XE22 Post não encontrado"));
-                }
+                return StatusCode(200, new ResultViewModel<Post>(post));
 
-                return Ok(new ResultViewModel<Post>(post));
-
-            }catch (Exception ex)
+            }
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE20 Falha interna no servidor"));
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
@@ -93,25 +82,8 @@ namespace Blog.Controllers
         {
             try
             {
-                var count = await context.Posts.AsNoTracking().CountAsync();
-                var posts = context.Posts
-                    .AsNoTracking()
-                    .Include(p => p.Category)
-                    .Include(p => p.Author)
-                    .Where(p => p.Category.Slug == categoryName)
-                    .Select(p => new ListPostsViewModel()
-                    {
-                        Id = p.Id,
-                        Title = p.Title,
-                        Slug = p.Slug,
-                        LastUpdateDate = p.LastUpdateDate,
-                        Category = p.Category.Name,
-                        Author = $"{p.Author.Name} ({p.Author.Email})"
-                    })
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
-                    .OrderByDescending(p => p.LastUpdateDate)
-                    .ToListAsync();
+                var posts = await _service.ReadPostsByCategoryAsync(page, pageSize, categoryName);
+                var count = posts.ToList().Count();
 
                 return Ok(new ResultViewModel<dynamic>(new
                 {
@@ -129,29 +101,13 @@ namespace Blog.Controllers
         
         [Authorize(Roles = "admin,author")]
         [HttpPost("v1/posts")]
-        public async Task<IActionResult> PostAsync(
-            [FromServices] BlogDataContext context,
-            [FromBody] CreatePostViewModel model)
+        public async Task<IActionResult> PostAsync([FromBody] CreatePostViewModel model)
         {
             if(!ModelState.IsValid)
                 return BadRequest(new ResultViewModel<Post>(ModelState.GetErros()));
             try
             {
-                Post post = new Post()
-                {
-                    Id = 0,
-                    Title = model.Title,
-                    Summary = model.Summary,
-                    Body = model.Body,
-                    Slug = model.Slug,
-                    AuthorId = model.AuthorId,
-                    CategoryId = model.CategoryId,
-                    CreateDate = DateTime.Now,
-                    LastUpdateDate = DateTime.Now,
-                };
-
-                await context.Posts.AddAsync(post);
-                await context.SaveChangesAsync();
+                var post = await _service.CreatePostAsync(model);
 
                 return Created($"v1/posts/{post.Id}", new ResultViewModel<Post>(post));
             }
@@ -167,69 +123,63 @@ namespace Blog.Controllers
 
         [Authorize(Roles = "admin,author")]
         [HttpPut("v1/posts/{id:int}")]
-        public async Task<IActionResult> PutAsync([FromServices] BlogDataContext context,
-            [FromBody] EditPostViewModel model,
+        public async Task<IActionResult> PutAsync([FromBody] EditPostViewModel model,
             [FromRoute] int id)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new ResultViewModel<Post>(ModelState.GetErros()));
             try
             {
-                var post = await context.Posts.FindAsync(id);
-                if (post == null)
-                    return NotFound(new ResultViewModel<Post>("Postagem não encontrada."));
+                var post = await _service.UpdatePostAsync(id, model);
 
-                post.Title = string.IsNullOrWhiteSpace(model.Title) ? post.Title : model.Title;
-                post.Summary = string.IsNullOrWhiteSpace(model.Summary) ? post.Summary : model.Summary;
-                post.Body = string.IsNullOrWhiteSpace(model.Body) ? post.Body : model.Body;
-                post.Slug = string.IsNullOrWhiteSpace(model.Slug) ? post.Slug : model.Slug.ToLower();
-                post.LastUpdateDate = DateTime.Now;
+                return StatusCode(200, new ResultViewModel<Post>(post));
+            }
+            catch (ArgumentException ex)
+            {
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
 
-                var categoryExists = await context.Categories.AnyAsync(c => c.Id == model.CategoryId);
-                if (!categoryExists)
-                    return BadRequest(new ResultViewModel<string>("Categoria inválida ou inexistente."));
-                post.CategoryId = model.CategoryId;
-
-
-                context.Posts.Update(post);
-                await context.SaveChangesAsync();
-
-                return Ok(new ResultViewModel<Post>(post));
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE - Não foi possível alterar a postagem"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao atualizar a postagem"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
 
         }
 
         [Authorize(Roles = "admin,author")]
         [HttpDelete("v1/posts/{id:int}")]
-        public async Task<IActionResult> DeleteAsync(
-            [FromServices] BlogDataContext context, 
-            [FromRoute] int id)
+        public async Task<IActionResult> DeleteAsync([FromRoute] int id)
         {
             try
             {
-                var post = context.Posts.Find(id);
-                if (post == null)
-                    return NotFound(new ResultViewModel<Post>("Postagem não encontrada."));
-                context.Posts.Remove(post);
-                await context.SaveChangesAsync();
+                var post = await _service.DeletePostAsync(id);
 
-                return Ok(new ResultViewModel<Post>(post));
+                return StatusCode(200, new ResultViewModel<Post>(post));
+            }
+            catch (ArgumentException ex)
+            {
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
+
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE - Não foi possível deletar a postagem."));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao deletar a categoria"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
     }
