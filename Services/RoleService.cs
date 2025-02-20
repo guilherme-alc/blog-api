@@ -11,9 +11,10 @@ namespace Blog.Services
     {
         private readonly IRepository<Role> _repository;
         private readonly IMemoryCache _memoryCache;
-        public RoleService(IRepository<Role> repository, IMemoryCache )
+        public RoleService(IRepository<Role> repository, IMemoryCache memory)
         {
             _repository = repository;
+            _memoryCache = memory;
         }
         public async Task<IEnumerable<Role>> ReadAllRolesAsync ()
         {
