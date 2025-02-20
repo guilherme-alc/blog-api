@@ -139,6 +139,7 @@ namespace Blog
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<CategoryService>();
             builder.Services.AddScoped<TagService>();
+            builder.Services.AddScoped<RoleService>();
             builder.Services.AddTransient<TokenService>();
         }
     }
