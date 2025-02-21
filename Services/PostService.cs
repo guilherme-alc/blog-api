@@ -101,7 +101,7 @@ namespace Blog.Services
             if (id <= 0)
                 throw new ArgumentException("Postagem inválida.");
 
-            var post = await _repository.GetByIdAsync(id);
+            var post = await _repository.GetForUpdateAsync(id);
             if (post == null)
                 throw new InvalidOperationException("Postagem não encontrada.");
 
@@ -114,8 +114,8 @@ namespace Blog.Services
             var category = await _categoryService.ReadCategoryByIdAsync(model.CategoryId);
             if (category == null)
                 throw new InvalidOperationException("Categoria não encontrada.");
-
-            post.CategoryId = model.CategoryId;
+            
+            post.Category = category;
 
             var isUpdated = await _repository.UpdateAsync(post);
             if (!isUpdated)

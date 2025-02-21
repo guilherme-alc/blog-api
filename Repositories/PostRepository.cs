@@ -1,6 +1,5 @@
 ﻿using Blog.Data;
 using Blog.Models;
-using Blog.ViewModels.Posts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Blog.Repositories
@@ -47,6 +46,13 @@ namespace Blog.Repositories
                 .ToListAsync();
 
             return posts;
+        }
+
+        public async Task<Post> GetForUpdateAsync(int id)
+        {
+            return await _dbSet.AsNoTracking()
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<bool> AddAsync(Post entity)
