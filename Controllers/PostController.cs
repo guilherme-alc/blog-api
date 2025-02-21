@@ -21,10 +21,7 @@ namespace Blog.Controllers
         }
         [Authorize]
         [HttpGet("v1/posts")]
-        public async Task<IActionResult> GetAsync(
-            [FromServices] BlogDataContext context,
-            [FromQuery] int page = 0,
-            [FromQuery] int pageSize = 25)
+        public async Task<IActionResult> GetAsync([FromQuery] int page = 0, [FromQuery] int pageSize = 25)
         {
             try
             {
@@ -47,9 +44,7 @@ namespace Blog.Controllers
 
         [Authorize]
         [HttpGet("v1/posts/{id:int}")]
-        public async Task<IActionResult> GetDetailsAsync(
-            [FromServices] BlogDataContext context,
-            [FromRoute] int id)
+        public async Task<IActionResult> GetDetailsAsync([FromRoute] int id)
         {
             try
             {
@@ -75,7 +70,6 @@ namespace Blog.Controllers
         [Authorize]
         [HttpGet("v1/posts/category/{categoryName}")]
         public async Task<IActionResult> GetByGategoryAsync(
-            [FromServices] BlogDataContext context,
             [FromRoute] string categoryName,
             [FromQuery] int page = 0,
             [FromQuery] int pageSize = 25)
@@ -93,9 +87,17 @@ namespace Blog.Controllers
                     posts
                 }));
             }
-            catch
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, new ResultViewModel<List<string>>("05XE21 Falha interna no servidor"));
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
         
@@ -113,11 +115,11 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE - Não foi possível incluir o post"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao salvar a função"));
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
@@ -145,7 +147,7 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("Erro ao atualizar a postagem"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao atualizar a função"));
             }
             catch (Exception ex)
             {
@@ -175,7 +177,7 @@ namespace Blog.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("Erro ao deletar a categoria"));
+                return StatusCode(500, new ResultViewModel<string>("Erro ao deletar a função"));
             }
             catch (Exception ex)
             {

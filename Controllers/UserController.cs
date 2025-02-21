@@ -1,7 +1,7 @@
 ﻿using Blog.Data;
 using Blog.Models;
+using Blog.Services;
 using Blog.ViewModels;
-using Blog.ViewModels.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,30 +11,19 @@ namespace Blog.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
+        private readonly UserService _service;
+        public UserController (UserService service)
+        {
+            _service = service;
+        }
         [Authorize(Roles = "admin")]
         [HttpGet("v1/users")]
-        public async Task<IActionResult> GetAsync([FromServices] BlogDataContext context,
-            [FromQuery] int page = 0,
-            [FromQuery] int pageSize = 25)
+        public async Task<IActionResult> GetAsync([FromQuery] int page = 0, [FromQuery] int pageSize = 25)
         {
             try
             {
-                var count = await context.Users.CountAsync();
-                var users = await context.Users
-                    .AsNoTracking()
-                    .Include(u => u.Roles)
-                    .OrderBy(u => u.Id)
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
-                    .Select(u => new ListUserViewModel()
-                    {
-                        Id = u.Id,
-                        Name = u.Name,
-                        Email = u.Email,
-                        Slug = u.Slug,
-                        CreateDate = u.CreateDate
-                    })
-                    .ToListAsync();
+                var users = await _service.ReadAllUsersAsync(page, pageSize);
+                var count = users.Count();
 
                 return StatusCode(200, new ResultViewModel<dynamic>(new
                 {
@@ -43,28 +32,20 @@ namespace Blog.Controllers
                     pageSize,
                     users
                 }));
-            } 
-            catch
+            }
+            catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<List<Post>>("05XE Falha interna no servidor."));
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
         [Authorize(Roles ="admin")]
         [HttpGet("v1/users/{id:int}")]
-        public async Task<IActionResult> GetDetailsAsync(
-            [FromServices] BlogDataContext context,
-            [FromRoute] int id)
+        public async Task<IActionResult> GetDetailsAsync([FromRoute] int id)
         {
             try
             {
-                var user = await context.Users
-                    .AsNoTracking()
-                    .Include(u => u.Roles)
-                    .FirstOrDefaultAsync(u => u.Id == id);
-
-                if (user == null)
-                    return StatusCode(404, new ResultViewModel<string>("Usuário não encontrado."));
+                var user = await _service.ReadUserByIdAsync(id);
 
                 var userRoles = user.Roles.Select(r => r.Name).ToList();
 
@@ -79,10 +60,18 @@ namespace Blog.Controllers
                     user.Bio
                 }));
                 
-            } 
-            catch
+            }
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor."));
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
@@ -120,9 +109,22 @@ namespace Blog.Controllers
                     userRoles
                 }));
             }
-            catch
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor."));
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
+
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>("Erro ao vincular o usuário"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
