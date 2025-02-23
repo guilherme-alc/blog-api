@@ -9,39 +9,26 @@ namespace Blog.Services
     public class PostService
     {
         private readonly PostRepository _repository;
-        private readonly IMemoryCache _memoryCache;
         private readonly CategoryService _categoryService;
         public PostService(PostRepository repository, IMemoryCache memoryCache, CategoryService categoryService)
         {
             _repository = repository;
-            _memoryCache = memoryCache;
             _categoryService = categoryService;
         }
 
         public async Task<IEnumerable<ListPostsViewModel>> ReadAllPostsAsync(int page, int pageSize)
         {
-            var posts = await _memoryCache.GetOrCreateAsync("PostsCache", entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-                return ReadPosts();
-            });
-            return posts.Skip(page * pageSize).Take(pageSize);
-        }
-
-        public async Task<IEnumerable<ListPostsViewModel>> ReadPosts()
-        {
             var posts = await _repository.GetAllAsync();
 
-            return posts
-                .Select(p => new ListPostsViewModel()
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Slug = p.Slug,
-                    LastUpdateDate = p.LastUpdateDate,
-                    Category = p.Category.Name,
-                    Author = $"{p.Author.Name} - ({p.Author.Email})"
-                });
+            return posts.Select(p => new ListPostsViewModel()
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Slug = p.Slug,
+                LastUpdateDate = p.LastUpdateDate,
+                Category = p.Category.Name,
+                Author = $"{p.Author.Name} - ({p.Author.Email})"
+            }).Skip(page * pageSize).Take(pageSize);
         }
 
         public async Task<Post> ReadPostByIdAsync(int id)
