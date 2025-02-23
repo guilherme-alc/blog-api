@@ -77,27 +77,11 @@ namespace Blog.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpPost("v1/users/{userId:int}/role/{roleId:int}")]
-        public async Task<IActionResult> LinkRoleToUser(
-            [FromServices] BlogDataContext context,
-            [FromRoute] int userId,
-            [FromRoute] int roleId)
+        public async Task<IActionResult> LinkRoleToUser([FromRoute] int userId, [FromRoute] int roleId)
         {
             try
             {
-                var user = await context.Users
-                    .Include(u => u.Roles)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
-
-                if (user == null)
-                    return StatusCode(404, new ResultViewModel<string>("Usuário não encontrado."));
-
-                var role = await context.Roles.FindAsync(roleId);
-
-                if (role == null)
-                    return StatusCode(404, new ResultViewModel<string>("Perfil não encontrado."));
-
-                user.Roles.Add(role);
-                await context.SaveChangesAsync();
+                var user = await _service.AddRoleToUser(userId, roleId);
 
                 var userRoles = user.Roles.Select(r => r.Name).ToList();
 
@@ -116,7 +100,6 @@ namespace Blog.Controllers
             catch (InvalidOperationException ex)
             {
                 return StatusCode(404, new ResultViewModel<string>(ex.Message));
-
             }
             catch (DbUpdateException ex)
             {
@@ -130,27 +113,11 @@ namespace Blog.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpDelete("v1/users/{userId:int}/role/{roleId:int}")]
-        public async Task<IActionResult> DeleteRoleToUser(
-            [FromServices] BlogDataContext context,
-            [FromRoute] int userId,
-            [FromRoute] int roleId)
+        public async Task<IActionResult> DeleteRoleToUser([FromRoute] int userId, [FromRoute] int roleId)
         {
             try
             {
-                var user = await context.Users
-                    .Include(u => u.Roles)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
-
-                if (user == null)
-                    return StatusCode(404, new ResultViewModel<string>("Usuário não encontrado."));
-
-                var role = user.Roles.FirstOrDefault(r => r.Id == roleId);
-
-                if (role == null)
-                    return StatusCode(404, new ResultViewModel<string>("Perfil não encontrado."));
-
-                user.Roles.Remove(role);
-                await context.SaveChangesAsync();
+                var user = await _service.RemoveRoleToUser(userId, roleId);
 
                 var userRoles = user.Roles.Select(r => r.Name).ToList();
 
@@ -162,9 +129,21 @@ namespace Blog.Controllers
                     userRoles
                 }));
             }
-            catch
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05XE Falha interna no servidor."));
+                return StatusCode(400, new ResultViewModel<string>(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(404, new ResultViewModel<string>(ex.Message));
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>("Erro ao vincular o usuário"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
     }

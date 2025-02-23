@@ -6,9 +6,9 @@ namespace Blog.Services
 {
     public class UserService
     {
-        private readonly IRepository<User> _repository;
+        private readonly UserRepository _repository;
         private readonly RoleService _roleService;
-        public UserService(IRepository<User> repository, RoleService roleService)
+        public UserService(UserRepository repository, RoleService roleService)
         {
             _repository = repository;
             _roleService = roleService;
@@ -43,7 +43,7 @@ namespace Blog.Services
             return user;
         }
 
-        public async Task<User> LinkRoleToUser(int userId, int roleId)
+        public async Task<User> AddRoleToUser(int userId, int roleId)
         {
             if (userId <= 0)
                 throw new ArgumentException("Usuário inválido.");
@@ -62,7 +62,31 @@ namespace Blog.Services
                 throw new InvalidOperationException("Função não encontrada.");
 
             user.Roles.Add(role);
-            await _repository.UpdateAsync(user);
+            await _repository.SaveChangesAsync();
+
+            return user;
+        }
+
+        public async Task<User> RemoveRoleToUser(int userId, int roleId)
+        {
+            if (userId <= 0)
+                throw new ArgumentException("Usuário inválido.");
+
+            if (roleId <= 0)
+                throw new ArgumentException("Usuário inválido.");
+
+            var user = await _repository.GetByIdAsync(userId);
+
+            if (user == null)
+                throw new InvalidOperationException("Usuário não encontrado.");
+
+            var role = await _roleService.ReadRoleById(roleId);
+
+            if (role == null)
+                throw new InvalidOperationException("Função não encontrada.");
+
+            user.Roles.Remove(role);
+            await _repository.SaveChangesAsync();
 
             return user;
         }

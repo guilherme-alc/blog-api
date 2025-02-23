@@ -28,9 +28,8 @@ namespace Blog.Repositories
         public async Task<User> GetByIdAsync(int id)
         {
             var user = await _dbSet
-                .AsNoTracking()
                 .Include(u => u.Roles)
-                .FirstOrDefaultAsync(u => u.Id == id); ;
+                .FirstOrDefaultAsync(u => u.Id == id);
 
             return user;
         }
@@ -50,6 +49,12 @@ namespace Blog.Repositories
         public async Task<bool> DeleteAsync(User entity)
         {
             _dbSet.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> SaveChangesAsync()
+        {
             await _context.SaveChangesAsync();
             return true;
         }
