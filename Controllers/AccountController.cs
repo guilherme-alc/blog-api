@@ -16,98 +16,91 @@ namespace Blog.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
+        public AccountController(UserService service)
+        {
+            _service = service;
+        }
+        private readonly UserService _service;
+
         [HttpPost("v1/accounts")]
-        public async Task<IActionResult> Register ([FromServices] BlogDataContext context, 
-            [FromBody] RegisterUserViewModel model)
+        public async Task<IActionResult> Register ([FromBody] RegisterUserViewModel model)
         {
             if(!ModelState.IsValid)
-                return BadRequest(new ResultViewModel<string>(ModelState.GetErros()));
-
-            var user = new User()
-            {
-                Name = model.Name,
-                Email = model.Email,
-                Slug = model.Email.Replace("@", "-").Replace(".", "-"),
-                CreateDate = DateTime.Now,
-            };
-
-            // Gera senha forte e codifica
-            var password = PasswordGenerator.Generate(25, true, false);
-            user.PasswordHash = PasswordHasher.Hash(password);
+                return StatusCode(400, new ResultViewModel<string>(ModelState.GetErros()));
 
             try
             {
-                await context.Users.AddAsync(user);
-                await context.SaveChangesAsync();
+                var password = await _service.CreateUserAsync(model);
 
                 return Ok(new ResultViewModel<dynamic>(new
                 {
-                    user = user.Email,
+                    user = model.Email,
                     password = password
                 }));
             } catch (DbUpdateException ex)
             {
-                return StatusCode(400, new ResultViewModel<string>("05X20 - Este E-mail já está cadastrado."));
-            } catch
+                return StatusCode(500, new ResultViewModel<string>(ex.Message));
+            }
+            catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05X19 - Falha interna no servidor."));
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
         [HttpPost("v1/accounts/login")]
-        public async Task<IActionResult> Login([FromServices] BlogDataContext context,
-            [FromServices] TokenService tokenService,
-            [FromBody] LoginViewModel model)
+        public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
             if(!ModelState.IsValid)
-                return BadRequest(new ResultViewModel<string>(ModelState.GetErros()));
-
-            var user = await context.Users
-                .AsNoTracking()
-                .Include(u => u.Roles)
-                .FirstOrDefaultAsync(u => u.Email == model.Email);
-
-            if (user == null)
-                return StatusCode(401, new ResultViewModel<string>("Usuário ou senha inválidos."));
-
-            if(!PasswordHasher.Verify(user.PasswordHash, model.Password))
-                return StatusCode(401, new ResultViewModel<string>("Usuário ou senha inválidos."));
-
+                return StatusCode(400, new ResultViewModel<string>(ModelState.GetErros()));
             try
             {
-                var token = tokenService.GenerateToken(user);
+                var token = await _service.AuthenticateUser(model);
                 return Ok(new ResultViewModel<string>(token, null));
             }
-            catch
+            catch (InvalidOperationException ex)
             {
-                return StatusCode(500, new ResultViewModel<string>("05X18 - Falha interna no servidor."));
+                return StatusCode(401, new ResultViewModel<string>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
             }
         }
 
         [Authorize]
         [HttpPatch("v1/accounts")]
-        public async Task<IActionResult> Edit (
-            [FromServices] BlogDataContext context,
-            [FromBody] EditUserViewModel model)
+        public async Task<IActionResult> Edit ([FromBody] EditUserViewModel model)
         {
             if(!ModelState.IsValid)
                 return BadRequest(new ResultViewModel<User>(ModelState.GetErros()));
+            try 
+            {
+                var userId = GetUserIdFromToken();
+                var user = await _service.UpdateUserAsync(userId, model);
 
-            var userId = GetUserIdFromToken();
-            var user = await context.Users.FindAsync(userId);
+                return Ok(new ResultViewModel<dynamic>(new { user.Name, user.Email, user.Bio, model.Password }));
+            } 
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
+            }
+        }
 
-            if (user == null)
-                return NotFound("Usuário não encontrado.");
+        [Authorize]
+        [HttpDelete("v1/accounts")]
+        public async Task<IActionResult> Delete ()
+        {
+            try
+            {
+                var userId = GetUserIdFromToken();
+                var user = await _service.DeleteUserAsync(userId);
 
-            user.Name = string.IsNullOrEmpty(model.Name) ? user.Name : model.Name;
-            user.Email = string.IsNullOrEmpty(model.Email) ? user.Email : model.Email;
-            user.Bio = string.IsNullOrEmpty(model.Bio) ? user.Bio : model.Bio;
-            user.PasswordHash = string.IsNullOrEmpty(model.Password) ? user.PasswordHash : PasswordHasher.Hash(model.Password);
-
-            context.Update(user);
-            await context.SaveChangesAsync();
-
-            return Ok(new ResultViewModel<EditUserViewModel>(model));
+                return Ok(new ResultViewModel<string>("Conta deletada com sucesso!"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<string>(new List<string> { "Erro interno no servidor", ex.Message }));
+            }
         }
 
         private int GetUserIdFromToken()
