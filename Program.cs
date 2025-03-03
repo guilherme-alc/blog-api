@@ -97,6 +97,18 @@ namespace Blog
 
             builder.Services.AddSwaggerGen(c =>
             {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "BlogApi",
+                    Version = "v1",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "guilherme-alc",
+                        Email = "guilhermelac01@gmail.com",
+                        Url = new Uri("https://www.linkedin.com/in/guilherme-alc/")
+                    }
+                });
+
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
                     Name = "Authorization",
