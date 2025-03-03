@@ -109,6 +109,11 @@ namespace Blog
                     }
                 });
 
+                var xmlFile = "Blog.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+                c.IncludeXmlComments(xmlPath);
+
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
                     Name = "Authorization",

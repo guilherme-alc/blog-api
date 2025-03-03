@@ -28,8 +28,7 @@ namespace Blog.Controllers
         /// <response code="200">Sucesso</response>
         /// <response code="401">Não autenticado</response>
 
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResultViewModel<IEnumerable<Category>>), StatusCodes.Status200OK)]
         [Authorize]
         [HttpGet("v1/categories")]
         public async Task<IActionResult> GetAsync()
@@ -51,16 +50,15 @@ namespace Blog.Controllers
         /// <param name="id">Identificador da categoria</param>
         /// <returns>Dados da categoria</returns>
         /// <response code="200">Sucesso</response>
-        /// <response code="400">Requisição inválida</response>
+        /// <response code="400">Identificador inválido</response>
         /// <response code="401">Não autenticado</response>
-        /// <response code="404">Não encontrado</response>
+        /// <response code="404">Categoria não encontrada</response>
         /// <response code="500">Falha no servidor</response>
 
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ResultViewModel<Category>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize]
         [HttpGet("v1/categories/{id:int}")]
         public async Task<IActionResult> GetByIdAsync([FromRoute] int id)
@@ -95,11 +93,9 @@ namespace Blog.Controllers
         /// <response code="403">Sem permissão</response>
         /// <response code="500">Falha no servidor</response>
 
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ResultViewModel<Category>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpPost("v1/categories")]
         public async Task<IActionResult> PostAsync ([FromBody] EditorCategoryViewModel model)
@@ -137,11 +133,9 @@ namespace Blog.Controllers
         /// <response code="500">Falha no servidor</response>
 
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpPut("v1/categories/{id:int}")]
         public async Task<IActionResult> PutAsync ([FromRoute] int id, [FromBody] EditorCategoryViewModel model)
@@ -152,7 +146,7 @@ namespace Blog.Controllers
             {
                 var category = await _service.UpdateCatetoryAsync(id, model);
 
-                return StatusCode(204, new ResultViewModel<Category>(category));
+                return StatusCode(204);
             }
             catch (ArgumentException ex)
             {
@@ -185,11 +179,9 @@ namespace Blog.Controllers
         /// <response code="404">Categoria não encontrada</response>
 
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpDelete("v1/categories/{id:int}")]
         public async Task<IActionResult> DeleteAsync ([FromRoute] int id)
@@ -198,7 +190,7 @@ namespace Blog.Controllers
             {
                 var category = await _service.DeleteCatetoryAsync(id);
 
-                return Ok(new ResultViewModel<Category>(category));
+                return StatusCode(204);
             }
             catch (ArgumentException ex)
             {
