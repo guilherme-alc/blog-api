@@ -17,6 +17,16 @@ namespace Blog.Controllers
         {
             _service = service;
         }
+
+        /// <summary>
+        /// Obter todas as funções
+        /// </summary>
+        /// <returns>Coleção de tags</returns>
+        /// <response code="200">Sucesso</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="500">Falha no servidor</response>
+        [ProducesResponseType(typeof(ResultViewModel<IEnumerable<Role>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize]
         [HttpGet("v1/roles")]
         public async Task<IActionResult> GetAsync()
@@ -32,6 +42,15 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Obter detalhes de uma função
+        /// </summary>
+        /// <param name="id">Identificador da função</param>
+        /// <returns>Dados da função</returns>
+        [ProducesResponseType(typeof(ResultViewModel<Role>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize]
         [HttpGet("v1/roles/{id:int}")]
         public async Task<IActionResult> GetByAsync([FromRoute] int id)
@@ -56,6 +75,19 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Cadastrar uma função
+        /// </summary>
+        /// <param name="model">Dados da função</param>
+        /// <returns>Função recém criada</returns>
+        /// <response code="201">Sucesso</response>
+        /// <response code="400">Função inválida</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="403">Sem permissão</response>
+        /// <response code="500">Falha no servidor</response>
+        [ProducesResponseType(typeof(ResultViewModel<Role>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpPost("v1/roles")]
         public async Task<IActionResult> PostAsync([FromBody] EditorRoleViewModel model)
@@ -80,6 +112,22 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Atualiza uma função
+        /// </summary>
+        /// <param name="id">Identificador da função</param>
+        /// <param name="model">Dados da função</param>
+        /// <returns>Função atualizada</returns>
+        /// <response code="204">Sucesso</response>
+        /// <response code="400">Função inválida</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="403">Sem permissão</response>
+        /// <response code="404">Função não encontrada</response>
+        /// <response code="500">Falha no servidor</response>
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpPut("v1/roles/{id:int}")]
         public async Task<IActionResult> PutAsync([FromRoute] int id, [FromBody] EditorRoleViewModel model)
@@ -111,6 +159,20 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Remove uma função
+        /// </summary>
+        /// <param name="id">Identificador da função</param>
+        /// <returns>Função exclúida</returns>
+        /// <response code="204">Sucesso</response>
+        /// <response code="400">Identificador inválido</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="403">Sem permissão</response>
+        /// <response code="404">Função não encontrada</response>
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpDelete("v1/roles/{id:int}")]
         public async Task<IActionResult> DeleteAsync([FromRoute] int id)
