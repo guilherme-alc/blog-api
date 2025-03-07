@@ -17,6 +17,16 @@ namespace Blog.Controllers
         {
             _service = service;
         }
+
+        /// <summary>
+        /// Obter todas as tags
+        /// </summary>
+        /// <returns>Coleção de tags</returns>
+        /// <response code="200">Sucesso</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="500">Falha no servidor</response>
+        [ProducesResponseType(typeof(ResultViewModel<IEnumerable<Tag>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize]
         [HttpGet("v1/tags")]
         public async Task<IActionResult> GetAsync()
@@ -32,6 +42,15 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Obter detalhes de uma tag
+        /// </summary>
+        /// <param name="id">Identificador da tag</param>
+        /// <returns>Dados da tag</returns>
+        [ProducesResponseType(typeof(ResultViewModel<Tag>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize]
         [HttpGet("v1/tags/{id:int}")]
         public async Task<IActionResult> GetByAsync(
@@ -57,6 +76,19 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Cadastrar uma tag
+        /// </summary>
+        /// <param name="model">Dados da tag</param>
+        /// <returns>Tag recém criada</returns>
+        /// <response code="201">Sucesso</response>
+        /// <response code="400">Tag inválida</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="403">Sem permissão</response>
+        /// <response code="500">Falha no servidor</response>
+        [ProducesResponseType(typeof(ResultViewModel<Tag>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpPost("v1/tags")]
         public async Task<IActionResult> PostAsync(
@@ -82,6 +114,22 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Atualiza uma tag
+        /// </summary>
+        /// <param name="id">Identificador da tag</param>
+        /// <param name="model">Dados da tag</param>
+        /// <returns>Tag atualizada</returns>
+        /// <response code="204">Sucesso</response>
+        /// <response code="400">Tag inválida</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="403">Sem permissão</response>
+        /// <response code="404">Tag não encontrada</response>
+        /// <response code="500">Falha no servidor</response>
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpPut("v1/tags/{id:int}")]
         public async Task<IActionResult> PutAsync(
@@ -115,6 +163,20 @@ namespace Blog.Controllers
             }
         }
 
+        /// <summary>
+        /// Remove uma tag
+        /// </summary>
+        /// <param name="id">Identificador da tag</param>
+        /// <returns>Tag exclúida</returns>
+        /// <response code="204">Sucesso</response>
+        /// <response code="400">Identificador inválido</response>
+        /// <response code="401">Não autenticado</response>
+        /// <response code="403">Sem permissão</response>
+        /// <response code="404">Tag não encontrada</response>
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResultViewModel<string>), StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "admin")]
         [HttpDelete("v1/tags/{id:int}")]
         public async Task<IActionResult> DeleteAsync (
